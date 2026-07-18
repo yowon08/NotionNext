@@ -1,10 +1,10 @@
 import NoticeLibrary from '@/components/NoticeLibrary'
 import { buildLibraryStaticProps } from '@/lib/libraryPageProps'
 
-const NoticeTag = props => <NoticeLibrary {...props} />
+const StoryTag = props => <NoticeLibrary {...props} />
 
 export function getStaticProps({ params: { tag }, locale }) {
-  return buildLibraryStaticProps({ locale, tag }, 'notice')
+  return buildLibraryStaticProps({ locale, tag }, 'story')
 }
 
 export function getStaticPaths() {
@@ -14,4 +14,4 @@ export function getStaticPaths() {
   }
 }
 
-export default NoticeTag
+export default StoryTag

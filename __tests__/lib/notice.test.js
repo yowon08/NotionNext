@@ -1,4 +1,6 @@
 import {
+  getLibraryPages,
+  getLibraryTags,
   getNoticePages,
   getNoticeTags,
   isNoticePage,
@@ -46,7 +48,7 @@ const pages = [
   }
 ]
 
-describe('notice helpers', () => {
+describe('library helpers', () => {
   it('recognizes only visible Page rows in the notice category', () => {
     expect(isNoticePage(pages[0])).toBe(true)
     expect(isNoticePage(pages[1])).toBe(true)
@@ -89,5 +91,24 @@ describe('notice helpers', () => {
     expect(searchNoticePages(notices, '이능력').map(page => page.id)).toEqual([
       'review'
     ])
+  })
+
+  it('supports a separate story library with the same helpers', () => {
+    const storyPages = [
+      ...pages,
+      {
+        id: 'story-main',
+        type: 'Page',
+        status: 'Invisible',
+        category: '스토리',
+        tags: ['메인스토리'],
+        title: '첫 번째 이야기',
+        publishDate: 60
+      }
+    ]
+
+    const stories = getLibraryPages(storyPages, { category: '스토리' })
+    expect(stories.map(page => page.id)).toEqual(['story-main'])
+    expect(getLibraryTags(stories)).toEqual(['메인스토리'])
   })
 })

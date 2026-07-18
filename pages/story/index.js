@@ -1,10 +1,10 @@
 import NoticeLibrary from '@/components/NoticeLibrary'
 import { buildLibraryStaticProps } from '@/lib/libraryPageProps'
 
-const NoticeIndex = props => <NoticeLibrary {...props} />
+const StoryIndex = props => <NoticeLibrary {...props} />
 
 export function getStaticProps({ locale }) {
-  return buildLibraryStaticProps({ locale }, 'notice')
+  return buildLibraryStaticProps({ locale }, 'story')
 }
 
-export default NoticeIndex
+export default StoryIndex
