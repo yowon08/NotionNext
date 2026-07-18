@@ -1,9 +1,50 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import NotionLink, {
+  getClientSideHref,
   shouldOpenNotionLinkInNewTab
 } from '@/components/NotionLink'
 
+const mockPush = jest.fn()
+
+jest.mock('next/router', () => ({
+  useRouter: () => ({ push: mockPush })
+}))
+
 describe('NotionLink', () => {
+  beforeEach(() => {
+    mockPush.mockClear()
+  })
+
+  it('uses client-side navigation for internal links', () => {
+    render(<NotionLink href='/article/notice'>Notice</NotionLink>)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Notice' }))
+
+    expect(mockPush).toHaveBeenCalledWith('/article/notice')
+  })
+
+  it('uses client-side navigation for same-origin absolute links', () => {
+    render(
+      <NotionLink href={`${window.location.origin}/article/rules?from=notice`}>
+        Rules
+      </NotionLink>
+    )
+
+    fireEvent.click(screen.getByRole('link', { name: 'Rules' }))
+
+    expect(mockPush).toHaveBeenCalledWith('/article/rules?from=notice')
+  })
+
+  it('preserves native browser behavior for modified clicks', () => {
+    render(<NotionLink href='/article/notice'>Notice</NotionLink>)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Notice' }), {
+      ctrlKey: true
+    })
+
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('opens external http links in a new tab', () => {
     render(<NotionLink href='https://example.com'>Example</NotionLink>)
 
@@ -56,6 +97,39 @@ describe('NotionLink', () => {
     const link = screen.getByRole('link', { name: 'Mail' })
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+})
+
+describe('getClientSideHref', () => {
+  it('returns routes for relative and same-origin links', () => {
+    expect(
+      getClientSideHref('/article/notice', 'https://blog.example.com')
+    ).toBe('/article/notice')
+    expect(
+      getClientSideHref(
+        'https://blog.example.com/article/notice#rules',
+        'https://blog.example.com'
+      )
+    ).toBe('/article/notice#rules')
+  })
+
+  it('ignores external, hash-only, and non-http links', () => {
+    expect(
+      getClientSideHref(
+        'https://external.example.com/article/notice',
+        'https://blog.example.com'
+      )
+    ).toBeNull()
+    expect(getClientSideHref('#rules', 'https://blog.example.com')).toBeNull()
+    expect(
+      getClientSideHref(
+        '//external.example.com/notice',
+        'https://blog.example.com'
+      )
+    ).toBeNull()
+    expect(
+      getClientSideHref('mailto:test@example.com', 'https://blog.example.com')
+    ).toBeNull()
   })
 })
 
