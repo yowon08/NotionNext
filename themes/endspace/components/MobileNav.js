@@ -54,7 +54,9 @@ export const MobileNav = (props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [openSubMenuId, setOpenSubMenuId] = useState(null)
   const emailIcon = useRef(null)
-  
+  const bodyOverflowRef = useRef('')
+  const htmlOverflowRef = useRef('')
+
   // Get avatar from props or global context
   const avatarUrl = props?.siteInfo?.icon || siteInfo?.icon || siteConfig('AVATAR')
 
@@ -92,13 +94,16 @@ export const MobileNav = (props) => {
 
   // Prevent body scroll when menu is open
   useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (!isMenuOpen) return
+
+    bodyOverflowRef.current = document.body.style.overflow
+    htmlOverflowRef.current = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = bodyOverflowRef.current
+      document.documentElement.style.overflow = htmlOverflowRef.current
     }
   }, [isMenuOpen])
 
@@ -127,7 +132,7 @@ export const MobileNav = (props) => {
   return (
     <>
       {/* Top Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 md:hidden bg-white border-b border-[var(--endspace-border-base)] safe-area-top">
+      <nav className="fixed top-0 left-0 right-0 z-[70] md:hidden bg-white border-b border-[var(--endspace-border-base)] safe-area-top">
         <div className="flex items-center justify-between h-20 px-5">
           {/* Left: Avatar */}
           <SmartLink href="/aboutme" title="Profile" className="flex-shrink-0 flex items-center">
@@ -142,9 +147,11 @@ export const MobileNav = (props) => {
 
           {/* Right: Hamburger Menu Button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-14 h-14 flex items-center justify-center text-[var(--endspace-text-primary)] hover:text-[#d4d4d8] transition-colors"
+            onClick={() => setIsMenuOpen(open => !open)}
+            className="w-14 h-14 touch-manipulation flex items-center justify-center text-[var(--endspace-text-primary)] hover:text-[#d4d4d8] transition-colors"
             aria-label="Toggle Menu"
+            aria-controls="endspace-mobile-menu"
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? (
               <IconX size={28} stroke={1.5} />
@@ -156,18 +163,26 @@ export const MobileNav = (props) => {
       </nav>
 
       {/* Full Screen Menu Overlay */}
-      <div 
-        className={`fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      <div
+        className={`fixed inset-0 z-[60] md:hidden bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          isMenuOpen
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setIsMenuOpen(false)}
+        aria-hidden="true"
       />
 
       {/* Slide-in Menu Panel */}
-      <div 
-        className={`fixed top-20 left-0 right-0 bottom-0 z-40 md:hidden bg-white transition-transform duration-300 ease-out overflow-y-auto ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+      <div
+        id="endspace-mobile-menu"
+        className={`fixed top-20 left-0 right-0 bottom-0 z-[60] md:hidden bg-white transition-transform duration-300 ease-out overflow-y-auto overscroll-contain touch-pan-y ${
+          isMenuOpen
+            ? 'translate-x-0 pointer-events-auto'
+            : 'translate-x-full pointer-events-none'
         }`}
+        style={{ WebkitOverflowScrolling: 'touch' }}
+        aria-hidden={!isMenuOpen}
       >
         {/* Navigation Items */}
         <div className="flex flex-col items-start p-6 space-y-2">
@@ -195,9 +210,13 @@ export const MobileNav = (props) => {
               <div key={item.id || item.name} className="w-full">
                 <button
                   type="button"
-                  className={`${className} text-left`}
+                  className={`${className} touch-manipulation text-left`}
                   aria-expanded={isOpen}
-                  onClick={() => setOpenSubMenuId(isOpen ? null : item.id)}
+                  onClick={() =>
+                    setOpenSubMenuId(currentId =>
+                      currentId === item.id ? null : item.id
+                    )
+                  }
                 >
                   <div className="endspace-menu-icon-wrap transition-colors">
                      {renderIcon(item)}
